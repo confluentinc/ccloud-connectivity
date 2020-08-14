@@ -1,0 +1,17 @@
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.1.0
+    hooks:
+      - id: check-merge-conflict
+
+  - repo: local
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        description: Shell scripts conform to shellcheck
+        entry: pre-commit/shellcheck.sh
+        language: script
+        types: [shell]
+        args: [-e, SC1091]
