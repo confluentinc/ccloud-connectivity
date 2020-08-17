@@ -1,11 +1,11 @@
 # aws-privatelink
 
-Use the supplied `terraform.tfvars` file to supply required parameters to
-setup your VPC for Confluent Cloud Private Link.
+The [terraform](./terraform) directory contains a method to setup an AWS
+Private Link with Confluent Cloud.
 
-After populating it, simply run terraform (https://www.terraform.io/):
+The [dns-endpoints.sh](./dns-endpoints.sh) script runs the AWS CLI
+commands to emit the correct DNS Zone records for a specific VPC Endpoint.
 
-    terraform init
-    terraform apply
-
-The `privatelink_service_name` is provided to you directly from Confluent.
+The [debug-connectivity.sh](./debug-connectivity.sh) script runs commands
+that should be sent to Confluent Cloud support to assist with verification
+of Private Link Setup.
