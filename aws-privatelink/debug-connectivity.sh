@@ -3,18 +3,21 @@
 #
 # debug-connectivity.sh
 #
-# Debug connectivity through AWS Private Link to Confluent Cloud.
+# Debug connectivity through AWS Private Link to Confluent Cloud. Ensures
+# alignment of zones across customer and Confluent Accounts.
 #
 # Example:
 #
-#   % debug-connectivity.sh lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092 QVZ72AZWH4DRNOZT
+#   % debug-connectivity.sh vpce-0123456789abcdef0 lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092 QVZ72AZWH4DRNOZT
 #   API Secret (paste hidden; press enter):
 #
-#   Bootstrap should have 3 IPs; Brokers should have 1 IP; Example good output:
-#   lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092 lkc-3gyjw.l63jl.us-west-2.aws.confluent.cloud. vpce-0123456789abcdef0-01234567.vpce-svc-0123456789abcdef0.us-west-2.vpce.amazonaws.com. 10.1.9.41 10.1.25.219 10.1.33.5 -----BEGIN CERTIFICATE----- Verify return code: 0 (ok)
-#   e-07cc-usw2-az1-l63jl.us-west-2.aws.glb.confluent.cloud:9092 e-07cc.usw2-az1.l63jl.us-west-2.aws.confluent.cloud. vpce-0123456789abcdef0-01234567-us-west-2a.vpce-svc-0123456789abcdef0.us-west-2.vpce.amazonaws.com. 10.1.9.41 -----BEGIN CERTIFICATE----- Verify return code: 0 (ok)
-#
-#   ...
+#   OK    lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092
+#   OK    e-0cb9-usw2-az1-l63jl.us-west-2.aws.glb.confluent.cloud:9092
+#   OK    e-24ab-usw2-az3-l63jl.us-west-2.aws.glb.confluent.cloud:9092
+#   OK    e-1f75-usw2-az2-l63jl.us-west-2.aws.glb.confluent.cloud:9092
+#   OK    e-1b28-usw2-az2-l63jl.us-west-2.aws.glb.confluent.cloud:9092
+#   OK    e-25b1-usw2-az3-l63jl.us-west-2.aws.glb.confluent.cloud:9092
+#   OK    e-0ebc-usw2-az1-l63jl.us-west-2.aws.glb.confluent.cloud:9092
 #
 
 kafkacat 1> /dev/null 2>/dev/null
@@ -29,16 +32,21 @@ openssl version 1>/dev/null 2>/dev/null
 aws 1>/dev/null 2>/dev/null
 [[ $? == 127 ]] && echo "warning: please install 'aws'"
 
-if [[ $# != 2 ]]; then
-    echo "usage: $0 <bootstrap> <api-key>" 1>&2
+if [[ $# != 3 ]]; then
+    echo "usage: $0 <vpc-endpoint> <bootstrap> <api-key>" 1>&2
     echo "" 1>&2
+    echo "example: $0 vpce-0123456789abcdef0 lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092 QVZ72AZWH4DRNOZT"
     echo "api-secret input via prompt" 1>&2
     echo "" 1>&2
     exit 1
 fi
 
-bootstrap=$1
-key=$2
+endpoint=$1
+bootstrap=$2
+key=$3
+
+declare -A zonemap
+declare -A endpointmap
 
 printf 'API Secret (paste hidden; press enter): '
 stty -echo; trap 'stty echo' EXIT
@@ -46,19 +54,35 @@ read -r secret
 printf '\n'
 stty echo; trap - EXIT
 
+echo
+
 IFS='
 '
 
-echo
-echo "Bootstrap should have 3 IPs; Brokers should have 1 IP; Example good output:"
-cat <<EOF
-lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092 lkc-3gyjw.l63jl.us-west-2.aws.confluent.cloud. vpce-0123456789abcdef0-01234567.vpce-svc-0123456789abcdef0.us-west-2.vpce.amazonaws.com. 10.1.9.41 10.1.25.219 10.1.33.5 -----BEGIN CERTIFICATE----- Verify return code: 0 (ok)
-e-07cc-usw2-az1-l63jl.us-west-2.aws.glb.confluent.cloud:9092 e-07cc.usw2-az1.l63jl.us-west-2.aws.confluent.cloud. vpce-0123456789abcdef0-01234567-us-west-2a.vpce-svc-0123456789abcdef0.us-west-2.vpce.amazonaws.com. 10.1.9.41 -----BEGIN CERTIFICATE----- Verify return code: 0 (ok)
-EOF
-echo
-echo
-echo "Bootstrap / Broker Path Checks"
-echo
+# create map of zoneName to zoneId
+# ie: {us-west-2a: usw2-az3, us-west-2b: usw2-az1, ...}
+for nameId in $(aws ec2 describe-availability-zones \
+    --query 'AvailabilityZones[*].[ZoneName, ZoneId]' \
+    --output text); do
+    name=$(echo "$nameId" | awk '{print $1}')
+    id=$(echo "$nameId" | awk '{print $2}')
+    zonemap[$id]=$name
+done
+
+# inspect endpoints on VPC Endpoints
+for name in $(aws ec2 describe-vpc-endpoints \
+    --vpc-endpoint-ids "$endpoint" \
+    --query 'VpcEndpoints[*].DnsEntries[*].[DnsName]' \
+    --output text); do
+    zoneName=$(echo "$name" | sed -E -e 's/\..*/./' -e 's/^[^-]*-[^-]*-[^-]*-?([^.]*)?\./\1/')
+    if [[ -z $zoneName ]]; then
+        endpointmap["rr"]=$(dig +short "$name" | grep -v cloud | sort | xargs)
+    else
+        endpointmap[$zoneName]=$(dig +short "$name" | grep -v cloud | sort | xargs)
+    fi
+done
+
+fmt="%-5s %s\n"
 for namePort in $bootstrap $(kafkacat \
     -X security.protocol=SASL_SSL \
     -X "sasl.username=$key" \
@@ -66,24 +90,37 @@ for namePort in $bootstrap $(kafkacat \
     -X sasl.mechanisms=PLAIN \
     -X api.version.request=true \
     -b "$bootstrap" \
-    -L | grep ' at ' | sed -e 's/.* at //'); do
+    -L | grep ' at ' | sed -e 's/.* at //' -e 's/ .*//' | tr -d '\r'); do
+
+    if [[ $namePort == "$bootstrap" ]]; then
+        expectedIPs=${endpointmap[rr]}
+    else
+        zoneId=$(echo "$namePort" | sed -E -e 's/\..*/./' -e 's/^(lkc-[^-][^-]*|e)-[^-][^-]*-([^.][^.]*)-[^-][^-]*$/\2/')
+        if [[ -z $zoneId ]]; then
+            echo "error: unable to find zone id from broker name"
+            exit 1
+        fi
+        expectedIPs=${endpointmap[${zonemap[$zoneId]}]}
+    fi
 
     name=$(echo "$namePort" | awk -F: '{print $1}')
-    # shellcheck disable=SC2046
-    echo "$namePort" $(dig +short "$name") $(openssl s_client -connect "$namePort" -servername "$name" </dev/null 2>/dev/null | grep -E 'BEGIN CERTIFICATE|Verify return code' | xargs)
-done
-
-echo
-echo "Route53 Hosted Zone Checks"
-echo
-for nameZoneId in $(aws \
-    route53 list-hosted-zones \
-    --query 'HostedZones[*].[Name,Id]' \
-    --output text \
-    | grep "$(echo "$bootstrap" | sed 's/^lkc-[^-]*-//' | sed 's/glb\.//')"); do
-
-    echo "$nameZoneId"
-    zoneId=$(echo "$nameZoneId" | awk '{print $2}')
-    aws route53 list-resource-record-sets --hosted-zone-id "$zoneId" --output json | cat
-    echo
+    ips=$(dig +short "$name" | grep -Ev ".cloud|.com" | sort | xargs)
+    if [[ "${expectedIPs}" == "${ips}" ]]; then
+        connectivity=$(openssl s_client -connect "$namePort" -servername "$name" </dev/null 2>/dev/null | grep -E 'BEGIN CERTIFICATE|Verify return code' | xargs)
+        expectedConnectivity="-----BEGIN CERTIFICATE----- Verify return code: 0 (ok)"
+        if [[ $connectivity == "$expectedConnectivity" ]]; then
+            # shellcheck disable=SC2059
+            printf "$fmt" "OK" "$namePort"
+        else
+            # shellcheck disable=SC2059
+            printf "$fmt" "FAIL" "$namePort"
+            # shellcheck disable=SC2059
+            printf "    unable to connect, firewall/security group? (received \"$connectivity\", expected \"$expectedConnectivity\")\n\n"
+        fi
+    else
+        # shellcheck disable=SC2059
+        printf "$fmt" "FAIL" "$namePort"
+        # shellcheck disable=SC2059
+        printf "    should point to zonal VPC Endpoint (resolves to ${ips}, but expected ${expectedIPs})\n\n"
+    fi
 done
