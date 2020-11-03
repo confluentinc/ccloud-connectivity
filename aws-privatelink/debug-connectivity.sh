@@ -44,6 +44,9 @@ fi
 endpoint=$1
 bootstrap=$2
 key=$3
+#           lkc-py7g5-4ny6k.us-west-2.aws.glb.confluent.cloud
+# yields              4ny6k.us-west-2.aws.confluent.cloud
+hz=$(echo "$bootstrap" | sed -E -e 's/^[^-]*-[^-]*-([^-]*-?[^.]*?\.[^:]*):.*/\1/' -e 's/\.glb//')
 
 declare -A zonemap
 declare -A endpointmap
@@ -93,6 +96,7 @@ for namePort in $bootstrap $(kafkacat \
     -L | grep ' at ' | sed -e 's/.* at //' -e 's/ .*//' | tr -d '\r'); do
 
     if [[ $namePort == "$bootstrap" ]]; then
+        zoneId="rr"
         expectedIPs=${endpointmap[rr]}
     else
         zoneId=$(echo "$namePort" | sed -E -e 's/\..*/./' -e 's/^(lkc-[^-][^-]*|e)-[^-][^-]*-([^.][^.]*)-[^-][^-]*$/\2/')
@@ -120,7 +124,17 @@ for namePort in $bootstrap $(kafkacat \
     else
         # shellcheck disable=SC2059
         printf "$fmt" "FAIL" "$namePort"
-        # shellcheck disable=SC2059
-        printf "    should point to zonal VPC Endpoint (resolves to ${ips}, but expected ${expectedIPs})\n\n"
+        if [[ $zoneId == "rr" ]]; then
+            printf "    \"*.%s\" should have a CNAME pointing to zone-less VPC Endpoint (resolves to \"%s\", but expected \"%s\")\n\n" \
+                "${hz}" \
+                "${ips}" \
+                "${expectedIPs}"
+        else
+            printf "    \"*.%s.%s\" should have a CNAME pointing to zonal VPC Endpoint (resolves to \"%s\", but expected \"%s\")\n\n" \
+                "${zoneId}" \
+                "${hz}" \
+                "${ips}" \
+                "${expectedIPs}"
+        fi
     fi
 done
