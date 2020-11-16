@@ -91,15 +91,27 @@ for name in $(aws ec2 describe-vpc-endpoints \
 done
 
 fmt="%-5s %s\n"
-for namePort in $bootstrap $(kafkacat \
+kcatout=$(kafkacat \
     -X security.protocol=SASL_SSL \
     -X "sasl.username=$key" \
     -X "sasl.password=$secret" \
     -X sasl.mechanisms=PLAIN \
     -X api.version.request=true \
     -b "$bootstrap" \
-    -L | grep ' at ' | sed -e 's/.* at //' -e 's/ .*//' | tr -d '\r'); do
+    -L)
+kcatrc=$?
+brokers=$(echo "$kcatout" | grep ' at ' | sed -e 's/.* at //' -e 's/ .*//' | tr -d '\r')
 
+if (( kcatrc != 0 )); then
+    echo "error: kafkacat exited non-zero $kcatrc" 1>&2
+    echo ""
+    echo "$kcatout"
+    exit 1
+fi
+
+nendpoints=0
+for namePort in $bootstrap $brokers; do
+    nendpoints=$(( nendpoints + 1 ))
     if [[ $namePort == "$bootstrap" ]]; then
         zoneId="rr"
         expectedIPs=${endpointmap[rr]}
@@ -143,3 +155,8 @@ for namePort in $bootstrap $(kafkacat \
         fi
     fi
 done
+
+if (( nendpoints <= 1 )); then
+    echo "error: expected more than 1 endpoint to be tested; missing brokers?" 1>&2
+    exit 1
+fi
