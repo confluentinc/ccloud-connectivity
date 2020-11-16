@@ -44,7 +44,7 @@ fi
 endpoint=$1
 bootstrap=$2
 key=$3
-#           lkc-py7g5-4ny6k.us-west-2.aws.glb.confluent.cloud
+#           lkc-py7g5-4ny6k.us-west-2.aws.glb.confluent.cloud:9092
 # yields              4ny6k.us-west-2.aws.confluent.cloud
 hz=$(echo "$bootstrap" | sed -E -e 's/^[^-]*-[^-]*-([^-]*-?[^.]*?\.[^:]*):.*/\1/' -e 's/\.glb//')
 
@@ -135,8 +135,7 @@ for namePort in $bootstrap $brokers; do
         else
             # shellcheck disable=SC2059
             printf "$fmt" "FAIL" "$namePort"
-            # shellcheck disable=SC2059
-            printf "    unable to connect, firewall/security group? (received \"$connectivity\", expected \"$expectedConnectivity\")\n\n"
+            printf "    unable to connect, firewall/security group? (received \"%s\", expected \"%s\")\n\n" "$connectivity" "$expectedConnectivity"
         fi
     else
         # shellcheck disable=SC2059
