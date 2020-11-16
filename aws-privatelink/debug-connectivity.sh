@@ -48,6 +48,11 @@ key=$3
 # yields              4ny6k.us-west-2.aws.confluent.cloud
 hz=$(echo "$bootstrap" | sed -E -e 's/^[^-]*-[^-]*-([^-]*-?[^.]*?\.[^:]*):.*/\1/' -e 's/\.glb//')
 
+if ! [[ $bootstrap =~ : ]]; then
+    echo "error: bootstrap missing port ($bootstrap, no :9092 for example)" 1>&2
+    exit 1
+fi
+
 declare -A zonemap
 declare -A endpointmap
 
