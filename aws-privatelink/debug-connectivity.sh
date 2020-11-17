@@ -11,6 +11,7 @@
 #   % debug-connectivity.sh vpce-0123456789abcdef0 lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092 QVZ72AZWH4DRNOZT
 #   API Secret (paste hidden; press enter):
 #
+#   OK    https://lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud
 #   OK    lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092
 #   OK    e-0cb9-usw2-az1-l63jl.us-west-2.aws.glb.confluent.cloud:9092
 #   OK    e-24ab-usw2-az3-l63jl.us-west-2.aws.glb.confluent.cloud:9092
@@ -32,6 +33,9 @@ openssl version 1>/dev/null 2>/dev/null
 aws 1>/dev/null 2>/dev/null
 [[ $? == 127 ]] && echo "warning: please install 'aws'"
 
+curl 1>/dev/null 2>/dev/null
+[[ $? == 127 ]] && echo "warning: please install 'curl'"
+
 if [[ $# != 3 ]]; then
     echo "usage: $0 <vpc-endpoint> <bootstrap> <api-key>" 1>&2
     echo "" 1>&2
@@ -44,9 +48,14 @@ fi
 endpoint=$1
 bootstrap=$2
 key=$3
-#           lkc-py7g5-4ny6k.us-west-2.aws.glb.confluent.cloud
+#           lkc-py7g5-4ny6k.us-west-2.aws.glb.confluent.cloud:9092
 # yields              4ny6k.us-west-2.aws.confluent.cloud
 hz=$(echo "$bootstrap" | sed -E -e 's/^[^-]*-[^-]*-([^-]*-?[^.]*?\.[^:]*):.*/\1/' -e 's/\.glb//')
+
+if ! [[ $bootstrap =~ : ]]; then
+    echo "error: bootstrap missing port ($bootstrap, no :9092 for example)" 1>&2
+    exit 1
+fi
 
 declare -A zonemap
 declare -A endpointmap
@@ -86,15 +95,51 @@ for name in $(aws ec2 describe-vpc-endpoints \
 done
 
 fmt="%-5s %s\n"
-for namePort in $bootstrap $(kafkacat \
+
+#
+# verify https path is functional
+#
+
+# shellcheck disable=SC2001
+httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//')"
+httpsout=$(curl --silent --include "$httpsname")
+httpsexpected="HTTP/1.1 401 Unauthorized"
+httpsactual="$(echo "$httpsout" | grep HTTP/ | tr -d '\r')"
+# shellcheck disable=SC2181
+if [[ $? != 0 ]] || [[ "$httpsactual" != "$httpsexpected" ]]; then
+    # shellcheck disable=SC2059
+    printf "$fmt" "FAIL" "$httpsname"
+    printf "    unexpected output from https endpoint (received \"%s\", expected \"%s\")\n\n" "$httpsactual" "$httpsexpected"
+else
+    # shellcheck disable=SC2059
+    printf "$fmt" "OK" "$httpsname"
+fi
+
+#
+# verify kafka bootstrap/broker paths are functional
+#
+
+kcatout=$(kafkacat \
     -X security.protocol=SASL_SSL \
     -X "sasl.username=$key" \
     -X "sasl.password=$secret" \
     -X sasl.mechanisms=PLAIN \
     -X api.version.request=true \
     -b "$bootstrap" \
-    -L | grep ' at ' | sed -e 's/.* at //' -e 's/ .*//' | tr -d '\r'); do
+    -L)
+kcatrc=$?
+brokers=$(echo "$kcatout" | grep ' at ' | sed -e 's/.* at //' -e 's/ .*//' | tr -d '\r')
 
+if (( kcatrc != 0 )); then
+    echo "error: kafkacat exited non-zero $kcatrc" 1>&2
+    echo ""
+    echo "$kcatout"
+    exit 1
+fi
+
+nendpoints=0
+for namePort in $bootstrap $brokers; do
+    nendpoints=$(( nendpoints + 1 ))
     if [[ $namePort == "$bootstrap" ]]; then
         zoneId="rr"
         expectedIPs=${endpointmap[rr]}
@@ -118,8 +163,7 @@ for namePort in $bootstrap $(kafkacat \
         else
             # shellcheck disable=SC2059
             printf "$fmt" "FAIL" "$namePort"
-            # shellcheck disable=SC2059
-            printf "    unable to connect, firewall/security group? (received \"$connectivity\", expected \"$expectedConnectivity\")\n\n"
+            printf "    unable to connect, firewall/security group? (received \"%s\", expected \"%s\")\n\n" "$connectivity" "$expectedConnectivity"
         fi
     else
         # shellcheck disable=SC2059
@@ -138,3 +182,8 @@ for namePort in $bootstrap $(kafkacat \
         fi
     fi
 done
+
+if (( nendpoints <= 1 )); then
+    echo "error: expected more than 1 endpoint to be tested; missing brokers?" 1>&2
+    exit 1
+fi
