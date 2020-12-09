@@ -1,4 +1,4 @@
-# aws-privatelink/terraform
+# privatelink/aws/terraform
 
 Use the supplied `terraform.tfvars` file to supply required parameters to
 setup your VPC for Confluent Cloud Private Link.
