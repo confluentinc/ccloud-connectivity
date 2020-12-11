@@ -1,4 +1,4 @@
-# aws-privatelink
+# privatelink/aws
 
 * The [terraform](./terraform) directory contains a method to setup an AWS
 Private Link with Confluent Cloud.
