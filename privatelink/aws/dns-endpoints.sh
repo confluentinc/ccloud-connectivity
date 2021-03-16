@@ -13,20 +13,24 @@
 #     *.usw2-az1                CNAME vpce-0123456789abcdef0-01234567-us-west-2a.vpce-svc-0123456789abcdef0.us-west-2.vpce.amazonaws.com
 #     *.usw2-az3                CNAME vpce-0123456789abcdef0-01234567-us-west-2c.vpce-svc-0123456789abcdef0.us-west-2.vpce.amazonaws.com
 #
+#   % ./dns-endpoints.sh vpce-0123456789abcdef0 usw2-az3
+#     *                         CNAME vpce-0123456789abcdef0-01234567-us-west-2c.vpce-svc-0123456789abcdef0.us-west-2.vpce.amazonaws.com
 
 aws 1>/dev/null 2>/dev/null
 [[ $? == 127 ]] && echo "warning: please install 'aws'"
 
-if [[ $# != 1 ]]; then
-    echo "usage: $0 <VPC Endpoint>" 1>&2
+if [[ $# < 1 || $# > 2 ]]; then
+    echo "usage: $0 <VPC Endpoint> [<Availability Zone ID>]" 1>&2
     echo ""
-    echo "example: $0 vpce-0123456789abcdef0"
+    echo "example: $0 vpce-0123456789abcdef0 usw2-az3"
     exit 1
 fi
 
 endpoint=$1
+zoneid=$2
 
 declare -A zonemap
+declare -A dnsrecord
 
 IFS='
 '
@@ -39,17 +43,28 @@ for nameId in $(aws ec2 describe-availability-zones \
     zonemap[$name]=$id
 done
 
-fmt="  %-25s CNAME %s\n"
 for name in $(aws ec2 describe-vpc-endpoints \
     --vpc-endpoint-ids "$endpoint" \
     --query 'VpcEndpoints[*].DnsEntries[*].[DnsName]' \
     --output text); do
     zoneName=$(echo "$name" | sed -E -e 's/\..*/./' -e 's/^[^-]*-[^-]*-[^-]*-?([^.]*)?\./\1/')
     if [[ -z $zoneName ]]; then
-        # shellcheck disable=SC2059
-        printf "$fmt" "*" "$name"
+        id="*"
     else
-        # shellcheck disable=SC2059
-        printf "$fmt" "*.${zonemap[$zoneName]}" "$name"
+        id="*.${zonemap[$zoneName]}"
     fi
+    dnsrecord[$id]=$name
 done
+
+fmt="  %-25s CNAME %s\n"
+# shellcheck disable=SC2059
+if [[ $zoneid != "" && ! -v dnsrecord["*.$zoneid"] ]]; then
+    echo "error: invalid Availability Zone ID '$zoneid'"
+    exit 1
+elif [[ $zoneid != "" ]]; then
+    printf "$fmt" "*" "${dnsrecord[*.$zoneid]}"
+else
+    for id in "${!dnsrecord[@]}"; do 
+        printf "$fmt" "$id" "${dnsrecord[$id]}" 
+    done
+fi
