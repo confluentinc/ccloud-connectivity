@@ -49,22 +49,27 @@ for name in $(aws ec2 describe-vpc-endpoints \
     --output text); do
     zoneName=$(echo "$name" | sed -E -e 's/\..*/./' -e 's/^[^-]*-[^-]*-[^-]*-?([^.]*)?\./\1/')
     if [[ -z $zoneName ]]; then
-        id="*"
+        allzonerecord=$name
     else
-        id="*.${zonemap[$zoneName]}"
+        dnsrecord["*.${zonemap[$zoneName]}"]=$name
     fi
-    dnsrecord[$id]=$name
 done
 
-fmt="  %-25s CNAME %s\n"
 # shellcheck disable=SC2059
-if [[ $zoneid != "" && ! -v dnsrecord["*.$zoneid"] ]]; then
-    echo "error: invalid Availability Zone ID '$zoneid'"
-    exit 1
-elif [[ $zoneid != "" ]]; then
-    printf "$fmt" "*" "${dnsrecord[*.$zoneid]}"
-else
+fmt="  %-25s CNAME %s\n"
+if [[ $zoneid == "" && ${#dnsrecord[@]} > 1 ]]; then # multi-zone
+    printf "$fmt" "*" "$allzonerecord" 
     for id in "${!dnsrecord[@]}"; do 
         printf "$fmt" "$id" "${dnsrecord[$id]}" 
     done
+elif [[ $zoneid == "" ]]; then # single-zone
+    for id in "${!dnsrecord[@]}"; do 
+        singlezonerecord=${dnsrecord[$id]} 
+    done
+    printf "$fmt" "*" "$singlezonerecord" 
+elif [[ $zoneid != "" && -v dnsrecord["*.$zoneid"] ]]; then
+    printf "$fmt" "*" "${dnsrecord[*.$zoneid]}"
+else # [[ $zoneid != "" && ! -v dnsrecord["*.$zoneid"] ]]
+    echo "error: invalid Availability Zone ID '$zoneid'"
+    exit 1
 fi
