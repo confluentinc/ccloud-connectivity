@@ -35,8 +35,8 @@ az 1>/dev/null 2>/dev/null
 curl 1>/dev/null 2>/dev/null
 [[ $? == 127 ]] && echo "warning: please install 'curl'"
 
-if [[ $# < 4 ]]; then
-    echo "usage: $0 <bootstrap> <api-key> <resource-group> <vpc-endpoint(s)..>" 1>&2
+if [[ $# -lt 4 ]]; then
+    echo "usage: $0 <bootstrap> <api-key> <resource-group> <vnet-endpoint(s)..>" 1>&2
     echo "" 1>&2
     echo "example: $0 lkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092 QVZ72AZWH4DRNOZT my-resource-group private-endpoint-1 private-endpoint-2 private-endpoint-3"
     echo "api-secret input via prompt" 1>&2
@@ -80,9 +80,9 @@ IFS='
 declare allzonerecord
 for endpoint in "${@:4}"; do
     nicId=$(az network private-endpoint show \
-    --name $endpoint --resource-group $resourceGroup \
+    --name "$endpoint" --resource-group "$resourceGroup" \
     --query 'networkInterfaces[0].id' | xargs echo)
-    ip=$(az network nic show --ids $nicId \
+    ip=$(az network nic show --ids "$nicId" \
     --query 'ipConfigurations[0].privateIpAddress' | xargs echo)
 
     zoneName=$(echo "$endpoint" | sed -E -e 's/^[^-]*-[^-]*-([^.]*)$/\1/')
@@ -90,11 +90,10 @@ for endpoint in "${@:4}"; do
     zonemap[$zoneId]=$zoneName
     endpointmap[$zoneName]=$ip
 
-    allzonerecord+=($ip)
+    allzonerecord+=("$ip")
 done
 
-sorted=($(sort <<<"${allzonerecord[*]}"))
-endpointmap["rr"]=$(echo ${sorted[@]})
+endpointmap["rr"]=$(sort <<<"${allzonerecord[*]}" | xargs)
 
 fmt="%-5s %s\n"
 
@@ -172,12 +171,12 @@ for namePort in $bootstrap $brokers; do
         # shellcheck disable=SC2059
         printf "$fmt" "FAIL" "$namePort"
         if [[ $zoneId == "rr" ]]; then
-            printf "    \"*.%s\" should have a CNAME pointing to zone-less VPC Endpoint (resolves to \"%s\", but expected \"%s\")\n\n" \
+            printf "    \"*.%s\" should have a CNAME pointing to zone-less VNET Endpoint (resolves to \"%s\", but expected \"%s\")\n\n" \
                 "${hz}" \
                 "${ips}" \
                 "${expectedIPs}"
         else
-            printf "    \"*.%s.%s\" should have a CNAME pointing to zonal VPC Endpoint (resolves to \"%s\", but expected \"%s\")\n\n" \
+            printf "    \"*.%s.%s\" should have a CNAME pointing to zonal VNET Endpoint (resolves to \"%s\", but expected \"%s\")\n\n" \
                 "${zoneId}" \
                 "${hz}" \
                 "${ips}" \
