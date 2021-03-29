@@ -52,7 +52,7 @@ locals {
 }
 
 resource "aws_security_group" "privatelink" {
-  name = "ccloud-privatelink_${bootstrap_prefix}_${var.vpc_id}"
+  name = "ccloud-privatelink_${local.bootstrap_prefix}_${var.vpc_id}"
   description = "Confluent Cloud Private Link minimal security group for ${var.bootstrap} in ${var.vpc_id}"
   vpc_id = data.aws_vpc.privatelink.id
 
