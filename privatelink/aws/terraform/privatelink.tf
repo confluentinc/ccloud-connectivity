@@ -51,13 +51,9 @@ locals {
   bootstrap_prefix = split(".", var.bootstrap)[0]
 }
 
-resource "random_id" "server" {
-  byte_length = 8
-}
-
 resource "aws_security_group" "privatelink" {
-  name = "ccloud-privatelink_${bootstrap_prefix}_${random_id.id}"
-  description = "Confluent Cloud Private Link minimal security group for ${var.bootstrap}"
+  name = "ccloud-privatelink_${bootstrap_prefix}_${var.vpc_id}"
+  description = "Confluent Cloud Private Link minimal security group for ${var.bootstrap} in ${var.vpc_id}"
   vpc_id = data.aws_vpc.privatelink.id
 
   ingress {
