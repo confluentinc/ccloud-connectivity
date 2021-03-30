@@ -52,7 +52,7 @@ locals {
 }
 
 resource "aws_security_group" "privatelink" {
-  # Ensure SG uniqueness adding a suffix with cluster id and VPC id. This also helps identifying the resource.
+  # Ensure that SG is unique, so that this module can be used multiple times within a single VPC
   name = "ccloud-privatelink_${local.bootstrap_prefix}_${var.vpc_id}"
   description = "Confluent Cloud Private Link minimal security group for ${var.bootstrap} in ${var.vpc_id}"
   vpc_id = data.aws_vpc.privatelink.id
