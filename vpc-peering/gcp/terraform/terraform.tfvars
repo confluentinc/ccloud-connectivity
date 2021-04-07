@@ -1,0 +1,6 @@
+region="us-east1"
+customer_vpc="my-vpc"
+customer_project="my-project"
+confluent_vpc="confluent-vpc"
+confluent_project="confluent-projectid"
+peer_name="confluent-peer"
