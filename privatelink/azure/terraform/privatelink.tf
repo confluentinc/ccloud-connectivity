@@ -5,7 +5,7 @@ terraform {
 provider "azurerm" {
   features {
   }
-  version = "= 2.32.0"
+  version = "~> 2.55.0"
 }
 
 
@@ -65,7 +65,7 @@ data "azurerm_subnet" "subnet" {
 locals {
   assert_no_network_policies_enabled = length([
     for _, subnet in data.azurerm_subnet.subnet:
-    true if subnet.enforce_private_link_endpoint_network_policies
+    true if !subnet.enforce_private_link_endpoint_network_policies
   ]) > 0 ? file("\n\nerror: private link endpoint network policies must be disabled https://docs.microsoft.com/en-us/azure/private-link/disable-private-endpoint-network-policy") : ""
 }
 
@@ -85,10 +85,10 @@ resource "azurerm_private_endpoint" "endpoint" {
   subnet_id = data.azurerm_subnet.subnet[each.key].id
 
   private_service_connection {
-    name                           = "confluent-${local.network_id}-${each.key}"
-    is_manual_connection           = true
-    private_connection_resource_id = each.value
-    request_message                = "PL"
+    name                              = "confluent-${local.network_id}-${each.key}"
+    is_manual_connection              = true
+    private_connection_resource_alias = each.value
+    request_message                   = "PL"
   }
 }
 
