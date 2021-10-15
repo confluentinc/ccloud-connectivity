@@ -1,13 +1,17 @@
 terraform {
   required_version = ">= 0.12.17"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 2.55.0"
+    }
+  }
 }
 
 provider "azurerm" {
   features {
   }
-  version = "~> 2.55.0"
 }
-
 
 variable "resource_group" {
   description = "Resource group of the VNET"
