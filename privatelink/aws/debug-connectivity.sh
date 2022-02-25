@@ -103,7 +103,7 @@ fmt="%-5s %s\n"
 # shellcheck disable=SC2001
 httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//')"
 httpsout=$(curl --silent --include "$httpsname")
-httpsexpected="HTTP/1.1 401 Unauthorized"
+httpsexpected="HTTP/2 401 "
 httpsactual="$(echo "$httpsout" | grep HTTP/ | tr -d '\r')"
 # shellcheck disable=SC2181
 if [[ $? != 0 ]] || [[ "$httpsactual" != "$httpsexpected" ]]; then
