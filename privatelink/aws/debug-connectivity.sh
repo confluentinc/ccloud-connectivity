@@ -103,10 +103,10 @@ fmt="%-5s %s\n"
 # shellcheck disable=SC2001
 httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//')"
 httpsout=$(curl --silent --include "$httpsname")
-httpsexpected="HTTP/2 401 "
+httpsexpected="HTTP/.* 401"
 httpsactual="$(echo "$httpsout" | grep HTTP/ | tr -d '\r')"
 # shellcheck disable=SC2181
-if [[ $? != 0 ]] || [[ "$httpsactual" != "$httpsexpected" ]]; then
+if [[ $? != 0 ]] || [[ ! "$httpsactual" =~ $httpsexpected ]]; then
     # shellcheck disable=SC2059
     printf "$fmt" "FAIL" "$httpsname"
     printf "    unexpected output from https endpoint (received \"%s\", expected \"%s\")\n\n" "$httpsactual" "$httpsexpected"
