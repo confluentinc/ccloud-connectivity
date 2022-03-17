@@ -115,6 +115,21 @@ else
     printf "$fmt" "OK" "$httpsname"
 fi
 
+# shellcheck disable=SC2001
+httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//;s/lkc-/lkaclkc-/')"
+httpsout=$(curl --silent --include "$httpsname")
+httpsexpected="HTTP/.* 401"
+httpsactual="$(echo "$httpsout" | grep HTTP/ | tr -d '\r')"
+# shellcheck disable=SC2181
+if [[ $? != 0 ]] || [[ ! "$httpsactual" =~ $httpsexpected ]]; then
+    # shellcheck disable=SC2059
+    printf "$fmt" "FAIL" "$httpsname"
+    printf "    unexpected output from https endpoint (received \"%s\", expected \"%s\")\n\n" "$httpsactual" "$httpsexpected"
+else
+    # shellcheck disable=SC2059
+    printf "$fmt" "OK" "$httpsname"
+fi
+
 #
 # verify kafka bootstrap/broker paths are functional
 #
