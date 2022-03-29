@@ -11,7 +11,8 @@
 #   % debug-connectivity.sh lkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092 QVZ72AZWH4DRNOZT my-resource-group private-endpoint-1 private-endpoint-2 private-endpoint-3
 #   API Secret (paste hidden; press enter):
 #
-#   OK    https://lkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud
+#   OK    https://lkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud/kafka/v3/clusters/lkc-test
+#   OK    https://lkaclkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud
 #   OK    lkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
 #   OK    e-0011-az1-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
 #   OK    e-0013-az3-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
@@ -102,12 +103,27 @@ fmt="%-5s %s\n"
 #
 
 # shellcheck disable=SC2001
-httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//')"
+httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//')/kafka/v3/clusters/lkc-test"
 httpsout=$(curl --silent --include "$httpsname")
 httpsexpected="HTTP/1.1 401 Unauthorized"
 httpsactual="$(echo "$httpsout" | grep HTTP/ | tr -d '\r')"
 # shellcheck disable=SC2181
 if [[ $? != 0 ]] || [[ "$httpsactual" != "$httpsexpected" ]]; then
+    # shellcheck disable=SC2059
+    printf "$fmt" "FAIL" "$httpsname"
+    printf "    unexpected output from https endpoint (received \"%s\", expected \"%s\")\n\n" "$httpsactual" "$httpsexpected"
+else
+    # shellcheck disable=SC2059
+    printf "$fmt" "OK" "$httpsname"
+fi
+
+# shellcheck disable=SC2001
+httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//;s/lkc-/lkaclkc-/')"
+httpsout=$(curl --silent --include "$httpsname")
+httpsexpected="HTTP/.* 401"
+httpsactual="$(echo "$httpsout" | grep HTTP/ | tr -d '\r')"
+# shellcheck disable=SC2181
+if [[ $? != 0 ]] || [[ ! "$httpsactual" =~ $httpsexpected ]]; then
     # shellcheck disable=SC2059
     printf "$fmt" "FAIL" "$httpsname"
     printf "    unexpected output from https endpoint (received \"%s\", expected \"%s\")\n\n" "$httpsactual" "$httpsexpected"
