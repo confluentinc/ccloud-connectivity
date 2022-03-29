@@ -11,7 +11,8 @@
 #   % debug-connectivity.sh vpce-0123456789abcdef0 lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092 QVZ72AZWH4DRNOZT
 #   API Secret (paste hidden; press enter):
 #
-#   OK    https://lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud
+#   OK    https://lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud/kafka/v3/clusters/lkc-test
+#   OK    https://lkaclkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud
 #   OK    lkc-3gyjw-l63jl.us-west-2.aws.glb.confluent.cloud:9092
 #   OK    e-0cb9-usw2-az1-l63jl.us-west-2.aws.glb.confluent.cloud:9092
 #   OK    e-24ab-usw2-az3-l63jl.us-west-2.aws.glb.confluent.cloud:9092
@@ -101,7 +102,7 @@ fmt="%-5s %s\n"
 #
 
 # shellcheck disable=SC2001
-httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//')"
+httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//')/kafka/v3/clusters/lkc-test"
 httpsout=$(curl --silent --include "$httpsname")
 httpsexpected="HTTP/.* 401"
 httpsactual="$(echo "$httpsout" | grep HTTP/ | tr -d '\r')"
