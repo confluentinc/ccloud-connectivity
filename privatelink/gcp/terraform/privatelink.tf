@@ -61,6 +61,11 @@ data "google_compute_network" "psc_endpoint_network" {
   provider = google
 }
 
+data "google_compute_subnetwork" "psc_endpoint_subnetwork" {
+  name     = var.subnetwork_name
+  provider = google
+}
+
 resource "google_compute_address" "psc_endpoint_ip" {
   for_each = var.psc_service_attachments_by_zone
 
@@ -117,4 +122,17 @@ resource "google_dns_record_set" "psc_endpoint_zonal_rs" {
 
   managed_zone = google_dns_managed_zone.psc_endpoint_hz.name
   rrdatas      = [google_compute_address.psc_endpoint_ip[each.key].address]
+}
+
+resource "google_compute_firewall" "allow-https-kafka" {
+  name    = "ccloud-endpoint-firewall-${local.network_id}"
+  network = data.google_compute_network.psc_endpoint_network.id
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443", "9092"]
+  }
+  
+  direction          = "EGRESS"
+  destination_ranges = [data.google_compute_subnetwork.psc_endpoint_subnetwork.ip_cidr_range]
 }
