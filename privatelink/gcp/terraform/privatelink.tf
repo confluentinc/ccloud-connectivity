@@ -17,11 +17,11 @@ terraform {
 }
 
 provider "google" {
-  project = var.realm
+  project = var.project
   region  = var.region
 }
 
-variable "realm" {
+variable "project" {
   description = "The GCP project to provision"
   type        = string
 }

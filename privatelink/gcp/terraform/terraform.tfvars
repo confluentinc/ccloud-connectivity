@@ -1,4 +1,4 @@
-realm           = "your-gcp-project-here"
+project         = "your-gcp-project-here"
 region          = "us-central1"
 network_name    = "your-network-name-here"
 subnetwork_name = "your-subnetwork-name-here"
