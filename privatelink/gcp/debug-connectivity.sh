@@ -11,7 +11,7 @@
 #
 # Example:
 #
-#   % debug-connectivity.sh lkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092 QVZ72AZWH4DRNOZT \
+#   % debug-connectivity.sh lkc-8wy7j0-4kxnm.centralus.azure.glb.confluent.cloud:9092 QVZ72AZWH4DRNOZT \
 #       <my gcp project> \
 #       <service attachment 1> \
 #       <service attachment 2> \
@@ -20,15 +20,15 @@
 #
 #   API Secret (paste hidden; press enter):
 #
-#   OK    https://lkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud/kafka/v3/clusters/lkc-test
-#   OK    https://lkaclkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud
-#   OK    lkc-8wy7j0-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
-#   OK    e-0011-az1-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
-#   OK    e-0013-az3-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
-#   OK    e-0015-az2-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
-#   OK    e-0016-az2-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
-#   OK    e-0014-az3-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
-#   OK    e-0012-az1-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
+#   OK    https://lkc-8wy7j0-4kxnm.centralus.azure.glb.confluent.cloud/kafka/v3/clusters/lkc-test
+#   OK    https://lkaclkc-8wy7j0-4kxnm.centralus.azure.glb.confluent.cloud
+#   OK    lkc-8wy7j0-4kxnm.centralus.azure.glb.confluent.cloud:9092
+#   OK    e-0011-az1-4kxnm.centralus.azure.glb.confluent.cloud:9092
+#   OK    e-0013-az3-4kxnm.centralus.azure.glb.confluent.cloud:9092
+#   OK    e-0015-az2-4kxnm.centralus.azure.glb.confluent.cloud:9092
+#   OK    e-0016-az2-4kxnm.centralus.azure.glb.confluent.cloud:9092
+#   OK    e-0014-az3-4kxnm.centralus.azure.glb.confluent.cloud:9092
+#   OK    e-0012-az1-4kxnm.centralus.azure.glb.confluent.cloud:9092
 
 function parse_zone_from_service_attachment_uri() {
     echo "$1" | awk -F/ '{print $NF}' | awk -F-service-attachment- '{print $NF}'
@@ -56,7 +56,7 @@ curl 1>/dev/null 2>/dev/null
 if [[ $# -lt 4 ]]; then
     echo "usage: $0 <bootstrap> <api-key> <gcp project> <service attachment1> <service attachment2> <service attachment3>" 1>&2
     echo "" 1>&2
-    echo "example: $0 lkc-pj5zxy-pdzwl6.us-central1.gcp.glb.devel.cpdev.cloud:9092 QVZ72AZWH4DRNOZT my-gcp-project ..."
+    echo "example: $0 lkc-pj5zxy-pdzwl6.us-central1.gcp.glb.confluent.cloud:9092 QVZ72AZWH4DRNOZT my-gcp-project ..."
     echo "api-secret input via prompt" 1>&2
     echo "" 1>&2
     exit 1

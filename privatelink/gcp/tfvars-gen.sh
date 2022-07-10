@@ -27,7 +27,7 @@ gcloud 1>/dev/null 2>/dev/null
 if [[ $# -lt 5 ]]; then
     echo "usage: $0 <bootstrap> <my gcp project> <network name> <subnetwork name> <service attachment URI(s)...>" 1>&2
     echo ""
-    echo "example: $0 lkc-1n0nvv-6k0qeg.us-central1.gcp.glb.devel.cpdev.cloud:9092 <my gcp project> <network name> <subnetwork name> <service attachment URI 1> <service attachment URI 2> <service attachment URI 3>"
+    echo "example: $0 lkc-1n0nvv-6k0qeg.us-central1.gcp.glb.confluent.cloud:9092 <my gcp project> <network name> <subnetwork name> <service attachment URI 1> <service attachment URI 2> <service attachment URI 3>"
     exit 1
 fi
 

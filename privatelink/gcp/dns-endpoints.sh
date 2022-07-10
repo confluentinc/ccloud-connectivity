@@ -7,17 +7,17 @@
 #
 # Example:
 #
-#   % ./dns-endpoints.sh lkc-1n0nvv-6k0qeg.us-central1.gcp.glb.devel.cpdev.cloud:9092 <my gcp project> <service attachment URI 1> <service attachment URI 2> <service attachment URI 3>
+#   % ./dns-endpoints.sh lkc-1n0nvv-6k0qeg.us-central1.gcp.glb.confluent.cloud:9092 <my gcp project> <service attachment URI 1> <service attachment URI 2> <service attachment URI 3>
 #
-#   Hosted zone domain: 6k0qeg.us-central1.gcp.devel.cpdev.cloud
+#   Hosted zone domain: 6k0qeg.us-central1.gcp.confluent.cloud
 #     *                          A    10.0.0.2 10.0.0.3 10.0.0.4
 #     *.us-central1-a            A    10.0.0.2
 #     *.us-central1-b            A    10.0.0.3
 #     *.us-central1-c            A    10.0.0.4
 #
-#   % ./dns-endpoints.sh lkc-1n0nvv-6k0qeg.us-central1.gcp.glb.devel.cpdev.cloud:9092 <my gcp project> <service attachment URI>
+#   % ./dns-endpoints.sh lkc-1n0nvv-6k0qeg.us-central1.gcp.glb.confluent.cloud:9092 <my gcp project> <service attachment URI>
 #
-#   Hosted zone domain: 6k0qeg.us-central1.gcp.devel.cpdev.cloud
+#   Hosted zone domain: 6k0qeg.us-central1.gcp.confluent.cloud
 #     *                          A    10.0.0.4
 
 function parse_zone_from_service_attachment_uri() {
@@ -41,7 +41,7 @@ gcloud 1>/dev/null 2>/dev/null
 if [[ $# -lt 3 ]]; then
     echo "usage: $0 <bootstrap> <my gcp project> <service attachment URI(s)...>" 1>&2
     echo ""
-    echo "example: $0 lkc-1n0nvv-6k0qeg.us-central1.gcp.glb.devel.cpdev.cloud:9092 <my gcp project> <service attachment URI 1> <service attachment URI 2> <service attachment URI 3>"
+    echo "example: $0 lkc-1n0nvv-6k0qeg.us-central1.gcp.glb.confluent.cloud:9092 <my gcp project> <service attachment URI 1> <service attachment URI 2> <service attachment URI 3>"
     exit 1
 fi
 
