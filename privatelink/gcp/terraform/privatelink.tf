@@ -76,6 +76,7 @@ resource "google_compute_address" "psc_endpoint_ip" {
   provider = google
 }
 
+# Private Service Connect endpoint
 resource "google_compute_forwarding_rule" "psc_endpoint_ilb" {
   for_each = var.psc_service_attachments_by_zone
 
@@ -89,6 +90,7 @@ resource "google_compute_forwarding_rule" "psc_endpoint_ilb" {
   provider = google
 }
 
+# Private hosted zone for Private Service Connect endpoints 
 resource "google_dns_managed_zone" "psc_endpoint_hz" {
   name     = "ccloud-endpoint-zone-${local.network_id}"
   dns_name = "${local.hosted_zone}."
