@@ -1,86 +1,19 @@
-terraform {
-  required_version = ">= 0.12.17"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 2.55.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {
-  }
-}
-
-variable "resource_group" {
-  description = "Resource group of the VNET"
-  type        = string
-}
-
-variable "region" {
-  description = "The Azure Region of the existing VNET"
-  type        = string
-}
-
-variable "vnet_name" {
-  description = "The VNET Name to private link to Confluent Cloud"
-  type        = string
-}
-
-variable "bootstrap" {
-  description = "The bootstrap server (ie: lkc-abcde-vwxyz.centralus.azure.glb.confluent.cloud:9092)"
-  type        = string
-}
-
-variable "privatelink_service_alias_by_zone" {
-  description = "A map of Zone to Service Alias from Confluent Cloud to Private Link with (provided by Confluent)"
-  type        = map(string)
-}
-
-variable "subnet_name_by_zone" {
-  description = "A map of Zone to Subnet Name"
-  type        = map(string)
-}
-
-locals {
-  hosted_zone = replace(regex("^[^.]+-([0-9a-zA-Z]+[.].*):[0-9]+$", var.bootstrap)[0], "glb.", "")
-  network_id = regex("^([^.]+)[.].*", local.hosted_zone)[0]
-}
-
-
-data "azurerm_resource_group" "rg" {
-  name = var.resource_group
-}
-
-data "azurerm_virtual_network" "vnet" {
-  name                = var.vnet_name
-  resource_group_name = data.azurerm_resource_group.rg.name
-}
-
-data "azurerm_subnet" "subnet" {
-  for_each = var.subnet_name_by_zone
-
-  name                 = each.value
-  virtual_network_name = data.azurerm_virtual_network.vnet.name
-  resource_group_name  = data.azurerm_resource_group.rg.name
-}
-
-locals {
-  assert_no_network_policies_enabled = length([
-    for _, subnet in data.azurerm_subnet.subnet:
-    true if !subnet.enforce_private_link_endpoint_network_policies
-  ]) > 0 ? file("\n\nerror: private link endpoint network policies must be disabled https://docs.microsoft.com/en-us/azure/private-link/disable-private-endpoint-network-policy") : ""
-}
-
 resource "azurerm_private_dns_zone" "hz" {
+  name = local.hosted_zone
   resource_group_name = data.azurerm_resource_group.rg.name
 
-  name = local.hosted_zone
+  tags = {
+    owner_email = "${var.owner_email}"
+    purpose = "${var.purpose}"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_private_endpoint" "endpoint" {
-  for_each = var.privatelink_service_alias_by_zone
+  for_each = confluent_network.azure-private-link.azure[0].private_link_service_aliases
 
   name                = "confluent-${local.network_id}-${each.key}"
   location            = var.region
@@ -92,7 +25,11 @@ resource "azurerm_private_endpoint" "endpoint" {
     name                              = "confluent-${local.network_id}-${each.key}"
     is_manual_connection              = true
     private_connection_resource_alias = each.value
-    request_message                   = "PL"
+    request_message                   = "PL request by ${var.owner_email} for ${var.purpose}"
+  }
+  tags = {
+    owner_email = "${var.owner_email}"
+    purpose = "${var.purpose}"
   }
 }
 
@@ -114,7 +51,7 @@ resource "azurerm_private_dns_a_record" "rr" {
 }
 
 resource "azurerm_private_dns_a_record" "zonal" {
-  for_each = var.privatelink_service_alias_by_zone
+  for_each = azurerm_private_endpoint.endpoint
 
   name                = "*.az${each.key}"
   zone_name           = azurerm_private_dns_zone.hz.name

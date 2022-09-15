@@ -7,5 +7,3 @@ After populating it, simply run terraform (https://www.terraform.io/):
 
     terraform init
     terraform apply
-
-The `privatelink_service_alias` is provided to you directly from Confluent.
