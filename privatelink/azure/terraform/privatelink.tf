@@ -7,9 +7,10 @@ resource "azurerm_private_dns_zone" "hz" {
     purpose = "${var.purpose}"
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # Uncomment if you don't want cluster to be destroyed
+  # lifecycle {
+  #  prevent_destroy = true
+  # }
 }
 
 resource "azurerm_private_endpoint" "endpoint" {
@@ -27,10 +28,16 @@ resource "azurerm_private_endpoint" "endpoint" {
     private_connection_resource_alias = each.value
     request_message                   = "PL request by ${var.owner_email} for ${var.purpose}"
   }
+
   tags = {
     owner_email = "${var.owner_email}"
     purpose = "${var.purpose}"
   }
+
+  # Uncomment if you don't want cluster to be destroyed
+  # lifecycle {
+  #  prevent_destroy = true
+  # }
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "hz" {
@@ -38,6 +45,11 @@ resource "azurerm_private_dns_zone_virtual_network_link" "hz" {
   resource_group_name   = data.azurerm_resource_group.rg.name
   private_dns_zone_name = azurerm_private_dns_zone.hz.name
   virtual_network_id    = data.azurerm_virtual_network.vnet.id
+
+  # Uncomment if you don't want cluster to be destroyed
+  # lifecycle {
+  #  prevent_destroy = true
+  # }
 }
 
 resource "azurerm_private_dns_a_record" "rr" {
@@ -48,6 +60,11 @@ resource "azurerm_private_dns_a_record" "rr" {
   records             = [
     for _, ep in azurerm_private_endpoint.endpoint: ep.private_service_connection[0].private_ip_address
   ]
+
+  # Uncomment if you don't want cluster to be destroyed
+  # lifecycle {
+  #  prevent_destroy = true
+  # }
 }
 
 resource "azurerm_private_dns_a_record" "zonal" {
@@ -60,4 +77,9 @@ resource "azurerm_private_dns_a_record" "zonal" {
   records             = [
     azurerm_private_endpoint.endpoint[each.key].private_service_connection[0].private_ip_address,
   ]
+
+  # Uncomment if you don't want cluster to be destroyed
+  # lifecycle {
+  #  prevent_destroy = true
+  # }
 }

@@ -13,11 +13,11 @@ output "azurerm_virtual_network_vnet_subnet" {
 }
 
 output "ccloud_env_id" {
-  value = [confluent_environment.env.id]
+  value = [data.confluent_environment.env.id]
 }
 
 output "ccloud_env_resource_name" {
-  value = [confluent_environment.env.resource_name]
+  value = [data.confluent_environment.env.resource_name]
 }
 
 output "ccloud_network_id" {
