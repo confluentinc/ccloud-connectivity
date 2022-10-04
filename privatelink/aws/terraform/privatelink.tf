@@ -8,11 +8,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region  = var.region
-}
-
-
 variable "region" {
   description = "The AWS Region of the existing VPC"
   type = string
