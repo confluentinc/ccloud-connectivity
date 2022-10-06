@@ -4,7 +4,7 @@ resource "confluent_kafka_cluster" "dedicated" {
   cloud        = "AZURE"
   region       = "${var.region}"
   dedicated {
-    cku = 2
+    cku = "${var.cluster_cku}"
   }
 
   environment {

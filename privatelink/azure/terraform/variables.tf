@@ -18,6 +18,11 @@ variable "cluster_name" {
   type        = string
 }
 
+variable "cluster_cku" {
+  description = "Confluent Cloud Cluster CKUs"
+  type        = number
+}
+
 variable "network_name" {
   description = "Confluent Cloud Network Name"
   type        = string
@@ -46,4 +51,14 @@ variable "vnet_name" {
 locals {
   hosted_zone = replace(regex("^[^.]+-([0-9a-zA-Z]+[.].*):[0-9]+$", confluent_kafka_cluster.dedicated.bootstrap_endpoint)[0], "glb.", "")
   network_id = regex("^([^.]+)[.].*", local.hosted_zone)[0]
+}
+
+variable "ksql_cluster" {
+  description = "ksql cluster name"
+  type        = string
+}
+
+variable "ksql_app_id" {
+  description = "ksql app id"
+  type        = string
 }
