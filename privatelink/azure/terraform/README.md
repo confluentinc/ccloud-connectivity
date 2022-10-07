@@ -28,8 +28,15 @@ Use the supplied `terraform.tfvars` file to supply required parameters to
     env_name       = "EnvironmentDisplayName"
     # Confluent Dedicated Cluster to create
     cluster_name   = "ClusterDisplayName"
+    # CKU count of the dedicated cluster
+    cluster_cku    = CKUCount
     # Confluent Private Link Network Name
     network_name   = "NetworkDisplayName"
+
+    # KSQL Cluster Name
+    ksql_cluster   = "KSQLClusterName"
+    # App ID for KSQL cluster. will be provisioning with ClusterAdmin role
+    ksql_app_id    = "AppID"
 
 Lifecycle parameter is commented out now. To prevent accidentally destroying resource, uncomment the block on the resource
     
@@ -42,9 +49,11 @@ After populating it, simply run terraform (https://www.terraform.io/):
 
     terraform init
     terraform apply -target azurerm_private_dns_zone.hz
+    terraform apply 
 
 To Destroy, use `terraform destroy`
 
     terraform destroy -target azurerm_private_endpoint.endpoint
     terraform destroy -target azurerm_private_dns_zone.hz
     terraform destroy -target confluent_network.azure-private-link
+    terraform destroy 
