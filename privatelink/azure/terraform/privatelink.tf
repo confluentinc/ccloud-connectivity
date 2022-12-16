@@ -66,9 +66,6 @@ data "azurerm_subnet" "subnet" {
   resource_group_name  = data.azurerm_resource_group.rg.name
 }
 
-locals {
-}
-
 resource "azurerm_private_dns_zone" "hz" {
   resource_group_name = data.azurerm_resource_group.rg.name
 
