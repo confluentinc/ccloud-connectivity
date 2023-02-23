@@ -25,14 +25,12 @@ resource "aws_vpc_peering_connection_accepter" "peer" {
   auto_accept               = true
 }
 
-# Find the routing table
-data "aws_route_tables" "rts" {
-  vpc_id = var.customer_vpc_id
+data "aws_vpc" "customer_vpc" {
+  id = var.customer_vpc_id
 }
 
 resource "aws_route" "r" {
-  for_each                  = toset(data.aws_route_tables.rts.ids)
-  route_table_id            = each.key
+  route_table_id            = data.aws_vpc.customer_vpc.main_route_table_id
   destination_cidr_block    = var.confluent_cidr
   vpc_peering_connection_id = data.aws_vpc_peering_connection.accepter.id
 
