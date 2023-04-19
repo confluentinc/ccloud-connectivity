@@ -34,6 +34,9 @@ openssl version 1>/dev/null 2>/dev/null
 aws 1>/dev/null 2>/dev/null
 [[ $? == 127 ]] && echo "warning: please install 'aws'"
 
+aws_ver=$(aws --version | cut -d' ' -f 1 | cut -d/ -f 2 | cut -d. -f 1)
+[[ $aws_ver -lt 2 ]] && echo "warning: please install 'aws' v2"
+
 curl 1>/dev/null 2>/dev/null
 [[ $? == 127 ]] && echo "warning: please install 'curl'"
 

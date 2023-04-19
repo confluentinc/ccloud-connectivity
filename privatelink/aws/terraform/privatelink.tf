@@ -3,15 +3,10 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "= 2.32.0"
+      version = "~> 4.31"
     }
   }
 }
-
-provider "aws" {
-  region  = var.region
-}
-
 
 variable "region" {
   description = "The AWS Region of the existing VPC"
@@ -39,7 +34,7 @@ variable "subnets_to_privatelink" {
 }
 
 locals {
-  hosted_zone = replace(regex("^[^.]+-([0-9a-zA-Z]+[.].*):[0-9]+$", var.bootstrap)[0], "glb.", "")
+  hosted_zone = length(regexall(".glb", var.bootstrap)) > 0 ? replace(regex("^[^.]+-([0-9a-zA-Z]+[.].*):[0-9]+$", var.bootstrap)[0], "glb.", "") : regex("[.]([0-9a-zA-Z]+[.].*):[0-9]+$", var.bootstrap)[0]
 }
 
 
