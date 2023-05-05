@@ -1,31 +1,5 @@
 terraform {
   required_version = ">= 0.12.17"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 2.55.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {
-  }
-}
-
-variable "resource_group" {
-  description = "Resource group of the VNET"
-  type        = string
-}
-
-variable "region" {
-  description = "The Azure Region of the existing VNET"
-  type        = string
-}
-
-variable "vnet_name" {
-  description = "The VNET Name to private link to Confluent Cloud"
-  type        = string
 }
 
 variable "bootstrap" {
@@ -43,28 +17,6 @@ variable "subnet_name_by_zone" {
   type        = map(string)
 }
 
-locals {
-  hosted_zone = length(regexall(".glb", var.bootstrap)) > 0 ? replace(regex("^[^.]+-([0-9a-zA-Z]+[.].*):[0-9]+$", var.bootstrap)[0], "glb.", "") : regex("[.]([0-9a-zA-Z]+[.].*):[0-9]+$", var.bootstrap)[0]
-  network_id = regex("^([^.]+)[.].*", local.hosted_zone)[0]
-}
-
-
-data "azurerm_resource_group" "rg" {
-  name = var.resource_group
-}
-
-data "azurerm_virtual_network" "vnet" {
-  name                = var.vnet_name
-  resource_group_name = data.azurerm_resource_group.rg.name
-}
-
-data "azurerm_subnet" "subnet" {
-  for_each = var.subnet_name_by_zone
-
-  name                 = each.value
-  virtual_network_name = data.azurerm_virtual_network.vnet.name
-  resource_group_name  = data.azurerm_resource_group.rg.name
-}
 
 resource "azurerm_private_dns_zone" "hz" {
   name = local.hosted_zone
