@@ -55,7 +55,7 @@ bootstrap=$2
 key=$3
 #           lkc-py7g5-4ny6k.us-west-2.aws.glb.confluent.cloud:9092
 # yields              4ny6k.us-west-2.aws.confluent.cloud
-hz=$(echo "$bootstrap" | sed -E -e 's/^[^-]*-[^-]*-([^-]*-?[^.]*\.[^:]*):.*/\1/' -e 's/\.glb//')
+hz=$(echo "$bootstrap" | sed -E -e 's/^[^-]*-[^-.]*\.([^-]*[^.]*\.[^:]*):.*/\1/' -e 's/\.glb//')
 
 if ! [[ $bootstrap =~ : ]]; then
     echo "error: bootstrap missing port ($bootstrap, no :9092 for example)" 1>&2
@@ -149,7 +149,7 @@ for namePort in $bootstrap $brokers; do
         zoneId="rr"
         expectedIPs=${endpointmap[rr]}
     else
-        zoneId=$(echo "$namePort" | sed -E -e 's/\..*/./' -e 's/^(lkc-[^-][^-]*|e)-[^-][^-]*-([^.][^.]*)-[^-][^-]*$/\2/')
+        zoneId=$(echo "$namePort" | sed -E -e 's/^e-[^.]+\.([^.][^.]*).*$/\1/')
         if [[ -z $zoneId ]]; then
             echo "error: unable to find zone id from broker name"
             exit 1
