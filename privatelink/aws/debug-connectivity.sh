@@ -21,6 +21,8 @@
 #   OK    e-0ebc-usw2-az1-l63jl.us-west-2.aws.glb.confluent.cloud:9092
 #
 
+shopt -s expand_aliases
+alias kafkacat="docker run -it --rm edenhill/kcat:1.7.1 kcat"
 kafkacat 1> /dev/null 2>/dev/null
 [[ $? == 127 ]] && echo "warning: please install 'kafkacat'"
 
