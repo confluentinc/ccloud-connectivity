@@ -103,7 +103,7 @@ fmt="%-5s %s\n"
 
 # shellcheck disable=SC2001
 httpsname="https://$(echo "$bootstrap" | sed -e 's/:.*//')/kafka/v3/clusters/lkc-test"
-httpsout=$(curl --silent --include --connect-timeout 5 "$httpsname")
+httpsout=$(curl --silent --include --connect-timeout 15 "$httpsname")
 httpsexpected="HTTP/1.1 401 Unauthorized"
 httpsactual="$(echo "$httpsout" | grep HTTP/ | tr -d '\r')"
 # shellcheck disable=SC2181
