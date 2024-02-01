@@ -83,7 +83,7 @@ for endpoint in "${@:4}"; do
     --name "$endpoint" --resource-group "$resourceGroup" \
     --query 'networkInterfaces[0].id' | xargs echo)
     ip=$(az network nic show --ids "$nicId" \
-    --query 'ipConfigurations[0].privateIpAddress' | xargs echo)
+    --query 'ipConfigurations[0].privateIPAddress' | xargs echo)
 
     zoneName=$(echo "$endpoint" | sed -E -e 's/^[^-]*-[^-]*-([^.]*)$/\1/')
     zoneId="az$zoneName"
@@ -144,7 +144,16 @@ for namePort in $bootstrap $brokers; do
     if [[ $namePort == "$bootstrap" ]]; then
         zoneName="rr"
     else
-        zoneId=$(echo "$namePort" | sed -E -e 's/\..*/./' -e 's/^(lkc-[^-][^-]*|e)-[^-][^-]*-([^.][^.]*)-[^-][^-]*$/\2/')
+        # if namePort does not contain "glb" as the third domain (from top),
+        # fuse bottom three domains by replacing two dots with dashes to
+        # determine normalizedNamePort.
+        if [[ $(echo "$namePort" | awk -F. '{print $(NF-2)}') == "glb" ]]; then
+          normalizedNamePort=${nameport}
+        else
+          normalizedNamePort=$(echo "$namePort" | sed -E -e 's/\./-/' -e 's/\./-/')
+        fi
+
+        zoneId=$(echo "$normalizedNamePort" | sed -E -e 's/\..*/./' -e 's/^(lkc-[^-][^-]*|e)-[^-][^-]*-([^.][^.]*)-[^-][^-]*$/\2/')
         if [[ -z $zoneId ]]; then
             echo "error: unable to find zone id from broker name"
             exit 1
