@@ -147,7 +147,16 @@ for namePort in $bootstrap $brokers; do
         zoneId="rr"
         expectedIPs=${endpointmap[rr]}
     else
-        zoneId=$(echo "$namePort" | sed -E -e 's/\..*/./' -e 's/^(lkc-[^-][^-]*|e)-[^-][^-]*-([^.][^.]*)-[^-][^-]*$/\2/')
+        # if namePort does not contain "glb" as the third domain (from top),
+        # fuse bottom three domains by replacing two dots with dashes to
+        # determine normalizedNamePort.
+        if [[ $(echo "$namePort" | awk -F. '{print $(NF-2)}') == "glb" ]]; then
+          normalizedNamePort=${nameport}
+        else
+          normalizedNamePort=$(echo "$namePort" | sed -E -e 's/\./-/' -e 's/\./-/')
+        fi
+
+        zoneId=$(echo "$normalizedNamePort" | sed -E -e 's/\..*/./' -e 's/^(lkc-[^-][^-]*|e)-[^-][^-]*-([^.][^.]*)-[^-][^-]*$/\2/')
         if [[ -z $zoneId ]]; then
             echo "error: unable to find zone id from broker name"
             exit 1
