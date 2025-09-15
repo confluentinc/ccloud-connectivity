@@ -20,8 +20,15 @@
 #   OK    e-0014-az3-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
 #   OK    e-0012-az1-4kxnm.centralus.azure.glb.devel.cpdev.cloud:9092
 
-kafkacat 1> /dev/null 2>/dev/null
-[[ $? == 127 ]] && echo "warning: please install 'kafkacat'"
+# Check for kafkacat or kcat, prefer kcat if available
+KAFKACAT_BIN=""
+if which kcat >/dev/null 2>&1; then
+    KAFKACAT_BIN="kcat"
+elif which kafkacat >/dev/null 2>&1; then
+    KAFKACAT_BIN="kafkacat"
+else
+    echo "warning: please install 'kcat' or 'kafkacat'"
+fi
 
 dig 1>/dev/null 2>/dev/null
 [[ $? == 127 ]] && echo "warning: please install 'dig'"
@@ -120,7 +127,7 @@ fi
 # verify kafka bootstrap/broker paths are functional
 #
 
-kcatout=$(kafkacat \
+kcatout=$($KAFKACAT_BIN \
     -X security.protocol=SASL_SSL \
     -X "sasl.username=$key" \
     -X "sasl.password=$secret" \
@@ -132,7 +139,7 @@ kcatrc=$?
 brokers=$(echo "$kcatout" | grep ' at ' | sed -e 's/.* at //' -e 's/ .*//' | tr -d '\r')
 
 if (( kcatrc != 0 )); then
-    echo "error: kafkacat exited non-zero $kcatrc" 1>&2
+    echo "error: $KAFKACAT_BIN exited non-zero $kcatrc" 1>&2
     echo ""
     echo "$kcatout"
     exit 1
