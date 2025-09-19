@@ -132,7 +132,7 @@ resource "aws_route53_record" "privatelink-zonal" {
   for_each = var.subnets_to_privatelink
 
   zone_id = aws_route53_zone.privatelink.zone_id
-  name    = length(var.subnets_to_privatelink) == 1 ? "*" : "*.${each.key}"
+  name    = length(var.subnets_to_privatelink) == 1 ? "*" : "*.${data.aws_availability_zone.privatelink[each.key].zone_id}"
   type    = "CNAME"
   ttl     = "60"
   records = [
