@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.55.0"
+      version = "~> 3.0"
     }
   }
 }
@@ -75,14 +75,14 @@ resource "azurerm_private_dns_zone" "hz" {
 resource "azurerm_private_endpoint" "endpoint" {
   for_each = var.privatelink_service_alias_by_zone
 
-  name                = "confluent-${local.network_id}-${each.key}"
+  name                = "confluent-${local.network_id}-${each.key}-${substr(sha256(var.resource_group), 0, 6)}"
   location            = var.region
   resource_group_name = data.azurerm_resource_group.rg.name
 
   subnet_id = data.azurerm_subnet.subnet[each.key].id
 
   private_service_connection {
-    name                              = "confluent-${local.network_id}-${each.key}"
+    name                              = "confluent-${local.network_id}-${each.key}-${substr(sha256(var.resource_group), 0, 6)}"
     is_manual_connection              = true
     private_connection_resource_alias = each.value
     request_message                   = "PL"
