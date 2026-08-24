@@ -3,15 +3,15 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "4.11.0"
+      version = "4.85.0"
     }
     external = {
       source  = "hashicorp/external"
-      version = "2.0.0"
+      version = "2.4.1"
     }
     time = {
       source  = "hashicorp/time"
-      version = "0.6.0"
+      version = "0.14.1"
     }
   }
 }
